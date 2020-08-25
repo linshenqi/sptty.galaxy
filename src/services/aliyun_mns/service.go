@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	ali_mns "github.com/aliyun/aliyun-mns-go-sdk"
+	alimns "github.com/aliyun/aliyun-mns-go-sdk"
 	"github.com/linshenqi/sptty"
 )
 
@@ -14,7 +14,7 @@ const (
 
 type Service struct {
 	cfg       Config
-	mnsClient ali_mns.MNSClient
+	mnsClient alimns.MNSClient
 
 	queueContext    map[string]*Queue
 	mtxQueueContext sync.Mutex
@@ -46,15 +46,15 @@ func (s *Service) ServiceName() string {
 
 func (s *Service) doInit() error {
 	// init client
-	s.mnsClient = ali_mns.NewAliMNSClient(s.cfg.Url, s.cfg.AccessKey, s.cfg.AccessSecret)
+	s.mnsClient = alimns.NewAliMNSClient(s.cfg.Url, s.cfg.AccessKey, s.cfg.AccessSecret)
 
 	// init queues
 	s.mtxQueueContext = sync.Mutex{}
 	s.queueContext = map[string]*Queue{}
 	for _, v := range s.cfg.Queues {
 		q := Queue{
-			Queue:   ali_mns.NewMNSQueue(v, s.mnsClient),
-			RecvBuf: make(chan ali_mns.MessageReceiveResponse, BufferSize),
+			Queue:   alimns.NewMNSQueue(v, s.mnsClient),
+			RecvBuf: make(chan alimns.MessageReceiveResponse, BufferSize),
 			ErrBuf:  make(chan error),
 		}
 
@@ -69,11 +69,13 @@ func (s *Service) asyncQueueHanlder(queue *Queue) {
 	name := queue.Queue.Name()
 
 	for {
+		queue.doRecv()
+
 		select {
 		case recv := <-queue.RecvBuf:
-			s.notifyQueueHandlers(name, recv.MessageBody, nil)
+			s.notifyQueueHandlers(name, &recv, nil)
 		case err := <-queue.ErrBuf:
-			s.notifyQueueHandlers(name, "", err)
+			s.notifyQueueHandlers(name, nil, err)
 			return
 		}
 	}
@@ -88,7 +90,7 @@ func (s *Service) getQueue(name string) (*Queue, error) {
 	return q, nil
 }
 
-func (s *Service) notifyQueueHandlers(queueName string, msg string, err error) {
+func (s *Service) notifyQueueHandlers(queueName string, msg *alimns.MessageReceiveResponse, err error) {
 	q, err := s.getQueue(queueName)
 	if err != nil {
 		return
@@ -98,7 +100,7 @@ func (s *Service) notifyQueueHandlers(queueName string, msg string, err error) {
 	defer s.mtxQueueContext.Unlock()
 
 	for _, handler := range q.Handlers {
-		handler(msg, err)
+		handler(queueName, msg, err)
 	}
 }
 
@@ -112,7 +114,7 @@ func (s *Service) PostQueueMsg(queueName string, msg string) error {
 	s.mtxQueueContext.Lock()
 	defer s.mtxQueueContext.Unlock()
 
-	_, err = q.Queue.SendMessage(ali_mns.MessageSendRequest{
+	_, err = q.Queue.SendMessage(alimns.MessageSendRequest{
 		MessageBody:  msg,
 		DelaySeconds: 0,
 		Priority:     8,
@@ -138,4 +140,13 @@ func (s *Service) AddQueueHandler(queueName string, handler QueueHandler) error 
 	q.Handlers = append(q.Handlers, handler)
 
 	return nil
+}
+
+func (s *Service) DeleteQueueMsg(queueName string, receiptHandle string) error {
+	q, err := s.getQueue(queueName)
+	if err != nil {
+		return err
+	}
+
+	return q.Queue.DeleteMessage(receiptHandle)
 }

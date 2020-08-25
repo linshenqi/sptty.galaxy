@@ -1,18 +1,22 @@
 package aliyun_mns
 
 import (
-	ali_mns "github.com/aliyun/aliyun-mns-go-sdk"
+	alimns "github.com/aliyun/aliyun-mns-go-sdk"
 )
 
 const (
 	BufferSize = 65535
 )
 
-type QueueHandler func(string, error)
+type QueueHandler func(string, *alimns.MessageReceiveResponse, error)
 
 type Queue struct {
-	RecvBuf  chan ali_mns.MessageReceiveResponse
-	Queue    ali_mns.AliMNSQueue
+	RecvBuf  chan alimns.MessageReceiveResponse
+	Queue    alimns.AliMNSQueue
 	ErrBuf   chan error
 	Handlers []QueueHandler
+}
+
+func (s *Queue) doRecv() {
+	s.Queue.ReceiveMessage(s.RecvBuf, s.ErrBuf, 8)
 }
