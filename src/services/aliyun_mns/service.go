@@ -34,6 +34,7 @@ func (s *Service) Init(app sptty.Sptty) error {
 }
 
 func (s *Service) Release() {
+	s.doRelease()
 }
 
 func (s *Service) Enable() bool {
@@ -55,7 +56,7 @@ func (s *Service) doInit() error {
 		q := Queue{
 			Queue:   alimns.NewMNSQueue(v, s.mnsClient),
 			RecvBuf: make(chan alimns.MessageReceiveResponse, BufferSize),
-			ErrBuf:  make(chan error),
+			ErrBuf:  make(chan error, BufferSize),
 		}
 
 		s.queueContext[v] = &q
@@ -63,6 +64,12 @@ func (s *Service) doInit() error {
 	}
 
 	return nil
+}
+
+func (s *Service) doRelease() {
+	for _, v := range s.queueContext {
+		v.release()
+	}
 }
 
 func (s *Service) asyncQueueHanlder(queue *Queue) {
@@ -76,6 +83,8 @@ func (s *Service) asyncQueueHanlder(queue *Queue) {
 			s.notifyQueueHandlers(name, &recv, nil)
 		case err := <-queue.ErrBuf:
 			s.notifyQueueHandlers(name, nil, err)
+
+		case <-queue.Done:
 			return
 		}
 	}
