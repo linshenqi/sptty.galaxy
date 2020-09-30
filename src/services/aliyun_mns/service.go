@@ -13,6 +13,8 @@ const (
 )
 
 type Service struct {
+	sptty.BaseService
+
 	cfg       Config
 	mnsClient alimns.MNSClient
 
@@ -35,10 +37,6 @@ func (s *Service) Init(app sptty.Sptty) error {
 
 func (s *Service) Release() {
 	s.doRelease()
-}
-
-func (s *Service) Enable() bool {
-	return true
 }
 
 func (s *Service) ServiceName() string {
