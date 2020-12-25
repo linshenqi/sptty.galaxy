@@ -13,9 +13,10 @@ require (
 	github.com/kataras/golog v0.0.18 // indirect
 	github.com/klauspost/compress v1.10.10 // indirect
 	github.com/lib/pq v1.7.0 // indirect
-	github.com/linshenqi/sptty v0.0.0-20200927014728-e96fcc49453e
+	github.com/linshenqi/sptty v0.0.0-20201222153716-9b40d685214f
 	github.com/microcosm-cc/bluemonday v1.0.3 // indirect
-	github.com/nats-io/nats.go v1.9.1
+	github.com/nats-io/nats-server/v2 v2.1.9 // indirect
+	github.com/nats-io/nats.go v1.10.0
 	github.com/sirupsen/logrus v1.6.0 // indirect
 	golang.org/x/net v0.0.0-20200625001655-4c5254603344 // indirect
 	golang.org/x/sys v0.0.0-20200625212154-ddb9806d33ae // indirect

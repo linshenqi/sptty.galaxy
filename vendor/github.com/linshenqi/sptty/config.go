@@ -16,10 +16,12 @@ type ConfigService struct {
 	cfgs     map[string]interface{}
 }
 
-func (s *ConfigService) Init(app Sptty) error {
+func (s *ConfigService) Init(app ISptty) error {
 
 	f, err := os.Open(s.confPath)
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 
 	if err != nil {
 		return err
@@ -55,7 +57,7 @@ func (s *ConfigService) ServiceName() string {
 }
 
 type BaseConfig struct {
-	Config
+	IConfig
 }
 
 func (s *BaseConfig) ConfigName() string {

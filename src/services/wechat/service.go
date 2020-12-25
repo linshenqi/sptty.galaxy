@@ -13,7 +13,7 @@ type Service struct {
 	http *resty.Client
 }
 
-func (s *Service) Init(app sptty.Sptty) error {
+func (s *Service) Init(app sptty.ISptty) error {
 	s.http = sptty.CreateHttpClient(sptty.DefaultHttpClientConfig())
 
 	return nil

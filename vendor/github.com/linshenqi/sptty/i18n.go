@@ -49,7 +49,7 @@ type I18NService struct {
 	trans map[string]map[string]string
 }
 
-func (s *I18NService) Init(app Sptty) error {
+func (s *I18NService) Init(app ISptty) error {
 
 	if err := app.GetConfig(s.ServiceName(), &s.cfg); err != nil {
 		return err
@@ -90,7 +90,9 @@ func (s *I18NService) load() error {
 
 func (s *I18NService) loadFileContent(filepath string) error {
 	f, err := os.Open(filepath)
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 
 	if err != nil {
 		return err

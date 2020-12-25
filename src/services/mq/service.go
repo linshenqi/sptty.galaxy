@@ -10,7 +10,7 @@ type Service struct {
 	sptty.BaseService
 }
 
-func (s *Service) Init(app sptty.Sptty) error {
+func (s *Service) Init(app sptty.ISptty) error {
 	return nil
 }
 
